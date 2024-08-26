@@ -1,61 +1,36 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import altair as alt
-# import matplotlib.pyplot as plt
 
+DATE_COLUMN = 'date/time'
+DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
+         'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
 
+@st.cache_data
+def load_data(nrows):
+    data = pd.read_csv(DATA_URL, nrows=nrows)
+    lowercase = lambda x: str(x).lower()
+    data.rename(lowercase, axis=1, inplace=True)
+    data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
+    return data
 
-st.write("""
-# :rainbow[Robokids World!]
+data_loading_state = st.text("Loading data...")
+data = load_data(100000)
+data_loading_state.text("Done! (using st.cache_data)")
 
-> Place for young minds to develop their robotic skills...
----
-"""
-         )
+if st.checkbox("Show raw data"):
+    st.subheader("Data")
+    st.write(data)
 
-st.write("Hello , *techies* :computer: **study well**")
+st.subheader("Number of pick ups by hour")
+hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0, 24))[0]
 
-st.header('st.button')
+st.bar_chart(hist_values)
 
-if st.button('Say hello'):
-     st.write('Why hello there')
-else:
-     st.write('Goodbye')
+st.subheader("Map of all pickups")
+st.map(data)
 
-st.write('Hello Data Nexus!!')
-'hi this is magic!:100:'
-':material/menu:'
-
-st.write(pd.DataFrame({'first column': [10, 30, 50, 70],
-                   'second column': [3, 4, 5, 6]}))
-
-# dataframe = np.random.randn(10, 20)
-# st.dataframe(dataframe)
-
-dataframe = pd.DataFrame(
-    np.random.randn(10, 20),
-    columns=[f"col_{i}" for i in range(20) ]
-
-)
-# st.dataframe(dataframe.style.highlight_max(axis=0))
-st.table(dataframe)
-
-
-dataframe = pd.DataFrame(
-    np.random.randn(20, 3),
-    columns= list('ABC')
-
-)
-st.line_chart(dataframe)
-
-st.bar_chart(dataframe['A'])
-
-number = st.slider("Pick a number", 0, 100)
-st.write(number)
-file = st.file_uploader('Pick a file!')
-
-df = pd.DataFrame(np.random.randint(10, 100, (20, 3)), columns=list('ABC'))
-c = alt.Chart(df).mark_circle().encode(x='A', y='C', color='C')
-
-st.altair_chart(c, use_container_width=True)
+hour_to_filter = st.slider('hour', 0, 23, 17)
+filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
+st.subheader(f'Map of all pickups at {hour_to_filter}:00')
+st.map(filtered_data)
