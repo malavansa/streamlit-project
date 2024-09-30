@@ -69,3 +69,4 @@ def add_info(fname, lname, dob, email, school, phone):
 st.write("# :green[CodeSpace]")
 
 create_form()
+
